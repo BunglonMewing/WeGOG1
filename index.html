@@ -1,0 +1,1455 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nexus Community - Tempat Berbagi Inspirasi</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Tambahkan Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-storage-compat.js"></script>
+    <style>
+        :root {
+            --primary: #4361ee;
+            --secondary: #3f37c9;
+            --accent: #4895ef;
+            --light: #f8f9fa;
+            --dark: #212529;
+            --success: #4cc9f0;
+            --danger: #f72585;
+            --warning: #f8961e;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+        
+        body {
+            background-color: #f5f7fa;
+            color: var(--dark);
+            overflow-x: hidden;
+        }
+        
+        /* Animasi dasar */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes slideInLeft {
+            from { opacity: 0; transform: translateX(-50px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        
+        /* Navbar */
+        .navbar {
+            background-color: white;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
+            animation: slideInLeft 0.5s ease-out;
+        }
+        
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+        }
+        
+        .logo i {
+            margin-right: 10px;
+            color: var(--accent);
+        }
+        
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+        }
+        
+        .nav-links a {
+            text-decoration: none;
+            color: var(--dark);
+            font-weight: 500;
+            transition: color 0.3s;
+            position: relative;
+        }
+        
+        .nav-links a:hover {
+            color: var(--primary);
+        }
+        
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 2px;
+            background: var(--primary);
+            bottom: -5px;
+            left: 0;
+            transition: width 0.3s;
+        }
+        
+        .nav-links a:hover::after {
+            width: 100%;
+        }
+        
+        .auth-buttons .btn {
+            padding: 0.5rem 1.5rem;
+            border-radius: 50px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: none;
+        }
+        
+        .btn-login {
+            background: transparent;
+            color: var(--primary);
+            border: 2px solid var(--primary);
+            margin-right: 1rem;
+        }
+        
+        .btn-login:hover {
+            background: var(--primary);
+            color: white;
+        }
+        
+        .btn-register {
+            background: var(--primary);
+            color: white;
+        }
+        
+        .btn-register:hover {
+            background: var(--secondary);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(67, 97, 238, 0.3);
+        }
+        
+        /* Hero Section */
+        .hero {
+            padding: 8rem 2rem 4rem;
+            text-align: center;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 60vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .hero h1 {
+            font-size: 3.5rem;
+            margin-bottom: 1.5rem;
+            color: var(--dark);
+            animation: fadeIn 0.8s ease-out;
+        }
+        
+        .hero p {
+            font-size: 1.2rem;
+            color: #555;
+            max-width: 700px;
+            margin-bottom: 2rem;
+            animation: fadeIn 1s ease-out;
+        }
+        
+        .hero-buttons {
+            display: flex;
+            gap: 1rem;
+            animation: fadeIn 1.2s ease-out;
+        }
+        
+        /* Main Content */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        .posts-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+        
+        .post-card {
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+            animation: fadeIn 0.5s ease-out;
+        }
+        
+        .post-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
+        }
+        
+        .post-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            align-items: center;
+        }
+        
+        .user-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-right: 1rem;
+        }
+        
+        .user-info h4 {
+            margin: 0;
+            font-size: 1.1rem;
+        }
+        
+        .user-info small {
+            color: #777;
+            font-size: 0.9rem;
+        }
+        
+        .post-content {
+            padding: 1.5rem;
+        }
+        
+        .post-content p {
+            margin-bottom: 1rem;
+            line-height: 1.6;
+        }
+        
+        .post-image {
+            width: 100%;
+            max-height: 300px;
+            object-fit: cover;
+        }
+        
+        .post-footer {
+            padding: 1rem 1.5rem;
+            border-top: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .post-actions {
+            display: flex;
+            gap: 1.5rem;
+        }
+        
+        .post-action {
+            display: flex;
+            align-items: center;
+            color: #777;
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+        
+        .post-action:hover {
+            color: var(--primary);
+        }
+        
+        .post-action i {
+            margin-right: 5px;
+        }
+        
+        .post-action.liked {
+            color: var(--danger);
+        }
+        
+        /* Create Post */
+        .create-post {
+            background: white;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            animation: fadeIn 0.5s ease-out;
+        }
+        
+        .create-post textarea {
+            width: 100%;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 1rem;
+            resize: none;
+            font-size: 1rem;
+            margin-bottom: 1rem;
+            transition: border-color 0.3s;
+        }
+        
+        .create-post textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+        
+        .create-post-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .attachment-options {
+            display: flex;
+            gap: 1rem;
+        }
+        
+        .attachment-option {
+            color: #777;
+            cursor: pointer;
+            transition: color 0.3s;
+            position: relative;
+        }
+        
+        .attachment-option:hover {
+            color: var(--primary);
+        }
+        
+        .attachment-option input[type="file"] {
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+        
+        .btn-post {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.7rem 1.5rem;
+            border-radius: 50px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .btn-post:hover {
+            background: var(--secondary);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(67, 97, 238, 0.3);
+        }
+        
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+            animation: fadeIn 0.3s;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 500px;
+            padding: 2rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            transform: translateY(-50px);
+            opacity: 0;
+            animation: fadeInUp 0.4s forwards;
+        }
+        
+        @keyframes fadeInUp {
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+        
+        .modal-header h2 {
+            color: var(--dark);
+        }
+        
+        .close-modal {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #777;
+        }
+        
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 0.8rem 1rem;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+        
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+        
+        .btn-submit {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.3s;
+        }
+        
+        .btn-submit:hover {
+            background: var(--secondary);
+        }
+        
+        /* Comment Section */
+        .comments-section {
+            padding: 1rem;
+            background: #f9f9f9;
+            border-top: 1px solid #eee;
+            display: none;
+        }
+        
+        .comment-form {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        .comment-input {
+            flex: 1;
+            padding: 0.8rem;
+            border: 1px solid #ddd;
+            border-radius: 50px;
+        }
+        
+        .comment-submit {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0 1.5rem;
+            border-radius: 50px;
+            cursor: pointer;
+        }
+        
+        .comment-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .comment {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .comment:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+        
+        .comment-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+        
+        .comment-content {
+            flex: 1;
+        }
+        
+        .comment-author {
+            font-weight: 600;
+            margin-bottom: 0.3rem;
+        }
+        
+        .comment-text {
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+        
+        .comment-time {
+            font-size: 0.8rem;
+            color: #777;
+        }
+        
+        /* Profile Dropdown */
+        .profile-dropdown {
+            position: relative;
+            display: inline-block;
+        }
+        
+        .profile-dropdown-content {
+            display: none;
+            position: absolute;
+            right: 0;
+            background-color: white;
+            min-width: 200px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+            border-radius: 8px;
+            z-index: 1;
+            overflow: hidden;
+        }
+        
+        .profile-dropdown:hover .profile-dropdown-content {
+            display: block;
+        }
+        
+        .profile-dropdown-content a {
+            color: var(--dark);
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+            transition: background-color 0.3s;
+        }
+        
+        .profile-dropdown-content a:hover {
+            background-color: #f5f5f5;
+        }
+        
+        /* Notification Badge */
+        .notification-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background-color: var(--danger);
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 0.7rem;
+            font-weight: bold;
+        }
+        
+        /* Footer */
+        footer {
+            background: var(--dark);
+            color: white;
+            padding: 3rem 2rem;
+            text-align: center;
+            margin-top: 3rem;
+        }
+        
+        .footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin: 2rem 0;
+        }
+        
+        .footer-links a {
+            color: white;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+        
+        .footer-links a:hover {
+            color: var(--accent);
+        }
+        
+        .social-icons {
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+        
+        .social-icons a {
+            color: white;
+            font-size: 1.5rem;
+            transition: color 0.3s, transform 0.3s;
+        }
+        
+        .social-icons a:hover {
+            color: var(--accent);
+            transform: translateY(-5px);
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .navbar {
+                padding: 1rem;
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .nav-links {
+                flex-direction: column;
+                gap: 1rem;
+                margin: 1rem 0;
+                width: 100%;
+                display: none;
+            }
+            
+            .nav-links.active {
+                display: flex;
+            }
+            
+            .auth-buttons {
+                margin-top: 1rem;
+                width: 100%;
+                display: none;
+            }
+            
+            .auth-buttons.active {
+                display: flex;
+                justify-content: space-between;
+            }
+            
+            .menu-toggle {
+                display: block;
+                position: absolute;
+                right: 1rem;
+                top: 1rem;
+                font-size: 1.5rem;
+                cursor: pointer;
+            }
+            
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+            
+            .posts-container {
+                grid-template-columns: 1fr;
+            }
+            
+            .comment-form {
+                flex-direction: column;
+            }
+            
+            .comment-input {
+                border-radius: 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="logo">
+            <i class="fas fa-users"></i>
+            <span>Nexus Community</span>
+        </div>
+        
+        <div class="nav-links">
+            <a href="#" class="active">Beranda</a>
+            <a href="#">Eksplor</a>
+            <a href="#">Tentang</a>
+            <a href="#">Kontak</a>
+        </div>
+        
+        <div class="auth-buttons" id="authButtons">
+            <button class="btn btn-login" id="loginBtn">Masuk</button>
+            <button class="btn btn-register" id="registerBtn">Daftar</button>
+        </div>
+        
+        <div class="profile-dropdown" id="userProfile" style="display: none;">
+            <img src="" alt="User" id="profileImage" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; cursor: pointer;">
+            <div class="profile-dropdown-content">
+                <a href="#" id="profileLink"><i class="fas fa-user"></i> Profil Saya</a>
+                <a href="#" id="notificationsLink">
+                    <i class="fas fa-bell"></i> Notifikasi
+                    <span class="notification-badge" id="notificationCount">3</span>
+                </a>
+                <a href="#" id="settingsLink"><i class="fas fa-cog"></i> Pengaturan</a>
+                <a href="#" id="logoutLink"><i class="fas fa-sign-out-alt"></i> Keluar</a>
+            </div>
+        </div>
+        
+        <i class="fas fa-bars menu-toggle" id="menuToggle"></i>
+    </nav>
+    
+    <!-- Hero Section -->
+    <section class="hero">
+        <h1>Bergabunglah dengan Komunitas Kami</h1>
+        <p>Berbagi ide, inspirasi, dan pengalaman dengan anggota komunitas lainnya. Temukan orang-orang dengan minat yang sama dan kembangkan jaringan profesional Anda.</p>
+        <div class="hero-buttons">
+            <button class="btn btn-register" id="heroRegisterBtn">Mulai Sekarang</button>
+            <button class="btn btn-login" id="heroLoginBtn">Pelajari Lebih Lanjut</button>
+        </div>
+    </section>
+    
+    <!-- Main Content -->
+    <div class="container">
+        <!-- Create Post (only visible when logged in) -->
+        <div class="create-post" id="createPost" style="display: none;">
+            <textarea id="postContent" placeholder="Apa yang ingin Anda bagikan hari ini?"></textarea>
+            <div id="imagePreview" style="margin-bottom: 1rem; display: none;">
+                <img id="previewImage" src="" alt="Preview" style="max-width: 100%; max-height: 300px; border-radius: 8px;">
+                <button id="removeImageBtn" style="background: var(--danger); color: white; border: none; padding: 0.3rem 0.8rem; border-radius: 5px; margin-top: 0.5rem; cursor: pointer;">Hapus Gambar</button>
+            </div>
+            <div class="create-post-actions">
+                <div class="attachment-options">
+                    <span class="attachment-option">
+                        <i class="fas fa-image"></i> Gambar
+                        <input type="file" id="imageUpload" accept="image/*">
+                    </span>
+                    <span class="attachment-option"><i class="fas fa-video"></i> Video</span>
+                    <span class="attachment-option"><i class="fas fa-link"></i> Tautan</span>
+                </div>
+                <button class="btn-post" id="submitPost">Posting</button>
+            </div>
+        </div>
+        
+        <!-- Posts Feed -->
+        <h2>Postingan Terbaru</h2>
+        <div class="posts-container" id="postsContainer">
+            <!-- Posts will be loaded dynamically from Firebase -->
+        </div>
+    </div>
+    
+    <!-- Login Modal -->
+    <div class="modal" id="loginModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Masuk ke Akun Anda</h2>
+                <button class="close-modal">&times;</button>
+            </div>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="loginEmail">Email</label>
+                    <input type="email" id="loginEmail" placeholder="Masukkan email Anda" required>
+                </div>
+                <div class="form-group">
+                    <label for="loginPassword">Password</label>
+                    <input type="password" id="loginPassword" placeholder="Masukkan password Anda" required>
+                </div>
+                <button type="submit" class="btn-submit">Masuk</button>
+            </form>
+            <p style="text-align: center; margin-top: 1rem;">Belum punya akun? <a href="#" id="showRegister">Daftar sekarang</a></p>
+            <p style="text-align: center; margin-top: 1rem;"><a href="#" id="forgotPassword">Lupa password?</a></p>
+        </div>
+    </div>
+    
+    <!-- Register Modal -->
+    <div class="modal" id="registerModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Buat Akun Baru</h2>
+                <button class="close-modal">&times;</button>
+            </div>
+            <form id="registerForm">
+                <div class="form-group">
+                    <label for="registerName">Nama Lengkap</label>
+                    <input type="text" id="registerName" placeholder="Masukkan nama lengkap Anda" required>
+                </div>
+                <div class="form-group">
+                    <label for="registerEmail">Email</label>
+                    <input type="email" id="registerEmail" placeholder="Masukkan email Anda" required>
+                </div>
+                <div class="form-group">
+                    <label for="registerPassword">Password</label>
+                    <input type="password" id="registerPassword" placeholder="Buat password (min. 8 karakter)" required minlength="8">
+                </div>
+                <div class="form-group">
+                    <label for="registerConfirmPassword">Konfirmasi Password</label>
+                    <input type="password" id="registerConfirmPassword" placeholder="Konfirmasi password Anda" required minlength="8">
+                </div>
+                <div class="form-group">
+                    <label for="registerAvatar">Foto Profil (Opsional)</label>
+                    <input type="file" id="registerAvatar" accept="image/*">
+                </div>
+                <button type="submit" class="btn-submit">Daftar</button>
+            </form>
+            <p style="text-align: center; margin-top: 1rem;">Sudah punya akun? <a href="#" id="showLogin">Masuk sekarang</a></p>
+        </div>
+    </div>
+    
+    <!-- Forgot Password Modal -->
+    <div class="modal" id="forgotPasswordModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Reset Password</h2>
+                <button class="close-modal">&times;</button>
+            </div>
+            <form id="forgotPasswordForm">
+                <div class="form-group">
+                    <label for="forgotEmail">Email</label>
+                    <input type="email" id="forgotEmail" placeholder="Masukkan email Anda" required>
+                </div>
+                <button type="submit" class="btn-submit">Kirim Link Reset</button>
+            </form>
+            <p style="text-align: center; margin-top: 1rem;">Ingat password? <a href="#" id="showLoginFromForgot">Masuk sekarang</a></p>
+        </div>
+    </div>
+    
+    <!-- Profile Modal -->
+    <div class="modal" id="profileModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Profil Saya</h2>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div style="text-align: center; margin-bottom: 2rem;">
+                <img id="profileModalImage" src="" alt="Profile" style="width: 150px; height: 150px; border-radius: 50%; object-fit: cover; margin-bottom: 1rem;">
+                <h3 id="profileModalName"></h3>
+                <p id="profileModalEmail"></p>
+            </div>
+            <form id="updateProfileForm">
+                <div class="form-group">
+                    <label for="updateName">Nama Lengkap</label>
+                    <input type="text" id="updateName" required>
+                </div>
+                <div class="form-group">
+                    <label for="updateBio">Bio</label>
+                    <textarea id="updateBio" rows="3" style="width: 100%; padding: 0.8rem; border: 1px solid #ddd; border-radius: 8px;"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="updateAvatar">Ubah Foto Profil</label>
+                    <input type="file" id="updateAvatar" accept="image/*">
+                </div>
+                <button type="submit" class="btn-submit">Perbarui Profil</button>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Footer -->
+    <footer>
+        <div class="footer-content">
+            <div class="logo">
+                <i class="fas fa-users"></i>
+                <span>Nexus Community</span>
+            </div>
+            
+            <div class="footer-links">
+                <a href="#">Tentang Kami</a>
+                <a href="#">Kebijakan Privasi</a>
+                <a href="#">Syarat dan Ketentuan</a>
+                <a href="#">FAQ</a>
+                <a href="#">Kontak</a>
+            </div>
+            
+            <div class="social-icons">
+                <a href="#"><i class="fab fa-facebook-f"></i></a>
+                <a href="#"><i class="fab fa-twitter"></i></a>
+                <a href="#"><i class="fab fa-instagram"></i></a>
+                <a href="#"><i class="fab fa-linkedin-in"></i></a>
+                <a href="#"><i class="fab fa-youtube"></i></a>
+            </div>
+            
+            <p>&copy; 2023 Nexus Community. All rights reserved.</p>
+        </div>
+    </footer>
+    
+    <script>
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_AUTH_DOMAIN",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_STORAGE_BUCKET",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+        
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+        const storage = firebase.storage();
+        
+        // DOM Elements
+        const menuToggle = document.getElementById('menuToggle');
+        const navLinks = document.querySelector('.nav-links');
+        const authButtons = document.querySelector('.auth-buttons');
+        const loginBtn = document.getElementById('loginBtn');
+        const registerBtn = document.getElementById('registerBtn');
+        const loginModal = document.getElementById('loginModal');
+        const registerModal = document.getElementById('registerModal');
+        const forgotPasswordModal = document.getElementById('forgotPasswordModal');
+        const profileModal = document.getElementById('profileModal');
+        const closeModalButtons = document.querySelectorAll('.close-modal');
+        const showRegister = document.getElementById('showRegister');
+        const showLogin = document.getElementById('showLogin');
+        const showLoginFromForgot = document.getElementById('showLoginFromForgot');
+        const forgotPassword = document.getElementById('forgotPassword');
+        const createPost = document.getElementById('createPost');
+        const postContent = document.getElementById('postContent');
+        const submitPost = document.getElementById('submitPost');
+        const postsContainer = document.getElementById('postsContainer');
+        const imageUpload = document.getElementById('imageUpload');
+        const imagePreview = document.getElementById('imagePreview');
+        const previewImage = document.getElementById('previewImage');
+        const removeImageBtn = document.getElementById('removeImageBtn');
+        const userProfile = document.getElementById('userProfile');
+        const profileImage = document.getElementById('profileImage');
+        const profileLink = document.getElementById('profileLink');
+        const logoutLink = document.getElementById('logoutLink');
+        const profileModalImage = document.getElementById('profileModalImage');
+        const profileModalName = document.getElementById('profileModalName');
+        const profileModalEmail = document.getElementById('profileModalEmail');
+        const updateProfileForm = document.getElementById('updateProfileForm');
+        const updateName = document.getElementById('updateName');
+        const updateBio = document.getElementById('updateBio');
+        const updateAvatar = document.getElementById('updateAvatar');
+        const heroLoginBtn = document.getElementById('heroLoginBtn');
+        const heroRegisterBtn = document.getElementById('heroRegisterBtn');
+           
+        // Variables
+        let selectedImageFile = null;
+        let currentUser = null;
+        
+        // Toggle Mobile Menu
+        menuToggle.addEventListener('click', () => {
+            navLinks.classList.toggle('active');
+            authButtons.classList.toggle('active');
+        });
+        
+        // Modal Functionality
+        const showModal = (modal) => {
+            modal.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+        };
+        
+        const hideModal = (modal) => {
+            modal.style.display = 'none';
+            document.body.style.overflow = 'auto';
+        };
+        
+        // Show Login Modal
+        loginBtn.addEventListener('click', () => showModal(loginModal));
+        heroLoginBtn.addEventListener('click', () => showModal(loginModal));
+        
+        // Show Register Modal
+        registerBtn.addEventListener('click', () => showModal(registerModal));
+        heroRegisterBtn.addEventListener('click', () => showModal(registerModal));
+        
+        // Show Forgot Password Modal
+        forgotPassword.addEventListener('click', (e) => {
+            e.preventDefault();
+            hideModal(loginModal);
+            showModal(forgotPasswordModal);
+        });
+        
+        // Switch between modals
+        showRegister.addEventListener('click', (e) => {
+            e.preventDefault();
+            hideModal(loginModal);
+            showModal(registerModal);
+        });
+        
+        showLogin.addEventListener('click', (e) => {
+            e.preventDefault();
+            hideModal(registerModal);
+            showModal(loginModal);
+        });
+        
+        showLoginFromForgot.addEventListener('click', (e) => {
+            e.preventDefault();
+            hideModal(forgotPasswordModal);
+            showModal(loginModal);
+        });
+        
+        // Close modals
+        closeModalButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const modal = button.closest('.modal');
+                hideModal(modal);
+            });
+        });
+        
+        window.addEventListener('click', (e) => {
+            if (e.target.classList.contains('modal')) {
+                hideModal(e.target);
+            }
+        });
+        
+        // Image Upload Preview
+        imageUpload.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                selectedImageFile = file;
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    previewImage.src = event.target.result;
+                    imagePreview.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+        
+        removeImageBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            selectedImageFile = null;
+            imagePreview.style.display = 'none';
+            imageUpload.value = '';
+        });
+        
+        // Profile Modal
+        profileLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            showModal(profileModal);
+        });
+        
+        // Auth State Listener
+        auth.onAuthStateChanged(async (user) => {
+            currentUser = user;
+            if (user) {
+                // User is signed in
+                authButtons.style.display = 'none';
+                userProfile.style.display = 'block';
+                
+                // Get user data from Firestore
+                const userDoc = await db.collection('users').doc(user.uid).get();
+                if (userDoc.exists) {
+                    const userData = userDoc.data();
+                    profileImage.src = userData.avatarUrl || 'https://randomuser.me/api/portraits/men/1.jpg';
+                    
+                    // Set profile modal data
+                    profileModalImage.src = userData.avatarUrl || 'https://randomuser.me/api/portraits/men/1.jpg';
+                    profileModalName.textContent = userData.name;
+                    profileModalEmail.textContent = user.email;
+                    updateName.value = userData.name;
+                    updateBio.value = userData.bio || '';
+                }
+                
+                // Show create post section
+                createPost.style.display = 'block';
+                
+                // Load posts
+                loadPosts();
+            } else {
+                // User is signed out
+                authButtons.style.display = 'flex';
+                userProfile.style.display = 'none';
+                createPost.style.display = 'none';
+                postsContainer.innerHTML = '';
+            }
+        });
+        
+        // Login Form
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            
+            try {
+                await auth.signInWithEmailAndPassword(email, password);
+                hideModal(loginModal);
+            } catch (error) {
+                alert(error.message);
+            }
+        });
+        
+        // Register Form
+        document.getElementById('registerForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('registerName').value;
+            const email = document.getElementById('registerEmail').value;
+            const password = document.getElementById('registerPassword').value;
+            const confirmPassword = document.getElementById('registerConfirmPassword').value;
+            const avatarFile = document.getElementById('registerAvatar').files[0];
+            
+            if (password !== confirmPassword) {
+                alert('Password tidak cocok!');
+                return;
+            }
+            
+            try {
+                // Create user
+                const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+                const user = userCredential.user;
+                
+                // Upload avatar if exists
+                let avatarUrl = '';
+                if (avatarFile) {
+                    const storageRef = storage.ref(`avatars/${user.uid}`);
+                    const snapshot = await storageRef.put(avatarFile);
+                    avatarUrl = await snapshot.ref.getDownloadURL();
+                }
+                
+                // Save user data to Firestore
+                await db.collection('users').doc(user.uid).set({
+                    name,
+                    email,
+                    avatarUrl,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                
+                hideModal(registerModal);
+            } catch (error) {
+                alert(error.message);
+            }
+        });
+        
+        // Forgot Password Form
+        document.getElementById('forgotPasswordForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('forgotEmail').value;
+            
+            try {
+                await auth.sendPasswordResetEmail(email);
+                alert('Link reset password telah dikirim ke email Anda!');
+                hideModal(forgotPasswordModal);
+            } catch (error) {
+                alert(error.message);
+            }
+        });
+        
+        // Logout
+        logoutLink.addEventListener('click', async (e) => {
+            e.preventDefault();
+            try {
+                await auth.signOut();
+            } catch (error) {
+                alert(error.message);
+            }
+        });
+        
+        // Create Post
+        submitPost.addEventListener('click', async (e) => {
+            e.preventDefault();
+            const content = postContent.value.trim();
+            
+            if (!content && !selectedImageFile) {
+                alert('Postingan tidak boleh kosong!');
+                return;
+            }
+            
+            try {
+                let imageUrl = '';
+                
+                // Upload image if exists
+                if (selectedImageFile) {
+                    const storageRef = storage.ref(`posts/${currentUser.uid}/${Date.now()}`);
+                    const snapshot = await storageRef.put(selectedImageFile);
+                    imageUrl = await snapshot.ref.getDownloadURL();
+                }
+                
+                // Save post to Firestore
+                await db.collection('posts').add({
+                    userId: currentUser.uid,
+                    content,
+                    imageUrl,
+                    likes: [],
+                    comments: [],
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                
+                // Clear form
+                postContent.value = '';
+                imagePreview.style.display = 'none';
+                selectedImageFile = null;
+                imageUpload.value = '';
+                
+                // Reload posts
+                loadPosts();
+            } catch (error) {
+                alert('Gagal membuat postingan: ' + error.message);
+            }
+        });
+        
+        // Load Posts
+        async function loadPosts() {
+            postsContainer.innerHTML = '';
+            
+            const querySnapshot = await db.collection('posts')
+                .orderBy('createdAt', 'desc')
+                .limit(20)
+                .get();
+            
+            for (const doc of querySnapshot.docs) {
+                const post = doc.data();
+                const postId = doc.id;
+                
+                // Get user data
+                const userDoc = await db.collection('users').doc(post.userId).get();
+                const userData = userDoc.data();
+                
+                // Format timestamp
+                const postDate = post.createdAt?.toDate();
+                const timeAgo = postDate ? formatTimeAgo(postDate) : 'Beberapa saat yang lalu';
+                
+                // Check if current user liked the post
+                const isLiked = post.likes && post.likes.includes(currentUser.uid);
+                
+                // Create post element
+                const postElement = document.createElement('div');
+                postElement.className = 'post-card';
+                postElement.innerHTML = `
+                    <div class="post-header">
+                        <img src="${userData.avatarUrl || 'https://randomuser.me/api/portraits/men/1.jpg'}" alt="User" class="user-avatar">
+                        <div class="user-info">
+                            <h4>${userData.name}</h4>
+                            <small>${timeAgo}</small>
+                        </div>
+                    </div>
+                    <div class="post-content">
+                        <p>${post.content}</p>
+                        ${post.imageUrl ? `<img src="${post.imageUrl}" alt="Post Image" class="post-image">` : ''}
+                    </div>
+                    <div class="post-footer">
+                        <div class="post-actions">
+                            <span class="post-action ${isLiked ? 'liked' : ''}" id="like-${postId}">
+                                <i class="${isLiked ? 'fas' : 'far'} fa-heart"></i> 
+                                <span id="likeCount-${postId}">${post.likes ? post.likes.length : 0}</span>
+                            </span>
+                            <span class="post-action" id="commentBtn-${postId}">
+                                <i class="far fa-comment"></i> 
+                                <span id="commentCount-${postId}">${post.comments ? post.comments.length : 0}</span>
+                            </span>
+                            <span class="post-action"><i class="fas fa-share"></i> Bagikan</span>
+                        </div>
+                    </div>
+                    <div class="comments-section" id="comments-${postId}">
+                        <div class="comment-form">
+                            <input type="text" class="comment-input" id="commentInput-${postId}" placeholder="Tulis komentar...">
+                            <button class="comment-submit" id="commentSubmit-${postId}"><i class="fas fa-paper-plane"></i></button>
+                        </div>
+                        <div class="comment-list" id="commentList-${postId}">
+                            <!-- Comments will be loaded here -->
+                        </div>
+                    </div>
+                `;
+                
+                postsContainer.appendChild(postElement);
+                
+                // Add like functionality
+                document.getElementById(`like-${postId}`).addEventListener('click', async () => {
+                    try {
+                        const postRef = db.collection('posts').doc(postId);
+                        if (isLiked) {
+                            // Unlike
+                            await postRef.update({
+                                likes: firebase.firestore.FieldValue.arrayRemove(currentUser.uid)
+                            });
+                        } else {
+                            // Like
+                            await postRef.update({
+                                likes: firebase.firestore.FieldValue.arrayUnion(currentUser.uid)
+                            });
+                        }
+                    } catch (error) {
+                        console.error('Error updating like:', error);
+                    }
+                });
+                
+                // Add comment toggle
+                document.getElementById(`commentBtn-${postId}`).addEventListener('click', () => {
+                    const commentsSection = document.getElementById(`comments-${postId}`);
+                    commentsSection.style.display = commentsSection.style.display === 'block' ? 'none' : 'block';
+                    
+                    // Load comments if not loaded
+                    if (commentsSection.style.display === 'block' && post.comments) {
+                        loadComments(postId, post.comments);
+                    }
+                });
+                
+                // Add comment submission
+                document.getElementById(`commentSubmit-${postId}`).addEventListener('click', async () => {
+                    const commentInput = document.getElementById(`commentInput-${postId}`);
+                    const commentText = commentInput.value.trim();
+                    
+                    if (commentText) {
+                        try {
+                            const comment = {
+                                userId: currentUser.uid,
+                                text: commentText,
+                                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                            };
+                            
+                            await db.collection('posts').doc(postId).update({
+                                comments: firebase.firestore.FieldValue.arrayUnion(comment)
+                            });
+                            
+                            commentInput.value = '';
+                        } catch (error) {
+                            console.error('Error adding comment:', error);
+                        }
+                    }
+                });
+            }
+            
+            // Real-time updates for likes and comments
+            db.collection('posts').onSnapshot((snapshot) => {
+                snapshot.docChanges().forEach((change) => {
+                    if (change.type === 'modified') {
+                        const postId = change.doc.id;
+                        const postData = change.doc.data();
+                        
+                        // Update like count
+                        const likeCountElement = document.getElementById(`likeCount-${postId}`);
+                        if (likeCountElement) {
+                            likeCountElement.textContent = postData.likes ? postData.likes.length : 0;
+                        }
+                        
+                        // Update like button state
+                        const likeButton = document.getElementById(`like-${postId}`);
+                        if (likeButton) {
+                            const isLiked = postData.likes && postData.likes.includes(currentUser.uid);
+                            likeButton.className = `post-action ${isLiked ? 'liked' : ''}`;
+                            likeButton.innerHTML = `
+                                <i class="${isLiked ? 'fas' : 'far'} fa-heart"></i> 
+                                <span id="likeCount-${postId}">${postData.likes ? postData.likes.length : 0}</span>
+                            `;
+                        }
+                        
+                        // Update comment count
+                        const commentCountElement = document.getElementById(`commentCount-${postId}`);
+                        if (commentCountElement) {
+                            commentCountElement.textContent = postData.comments ? postData.comments.length : 0;
+                        }
+                        
+                        // Update comments if section is open
+                        const commentsSection = document.getElementById(`comments-${postId}`);
+                        if (commentsSection && commentsSection.style.display === 'block' && postData.comments) {
+                            loadComments(postId, postData.comments);
+                        }
+                    }
+                });
+            });
+        }
+        
+        // Load Comments
+        async function loadComments(postId, comments) {
+            const commentList = document.getElementById(`commentList-${postId}`);
+            commentList.innerHTML = '';
+            
+            // Sort comments by date (newest first)
+            const sortedComments = [...comments].sort((a, b) => {
+                const dateA = a.createdAt?.toDate() || new Date(0);
+                const dateB = b.createdAt?.toDate() || new Date(0);
+                return dateB - dateA;
+            });
+            
+            for (const comment of sortedComments) {
+                const userDoc = await db.collection('users').doc(comment.userId).get();
+                const userData = userDoc.data();
+                const commentDate = comment.createdAt?.toDate();
+                const timeAgo = commentDate ? formatTimeAgo(commentDate) : 'Baru saja';
+                
+                const commentElement = document.createElement('div');
+                commentElement.className = 'comment';
+                commentElement.innerHTML = `
+                    <img src="${userData.avatarUrl || 'https://randomuser.me/api/portraits/men/1.jpg'}" alt="User" class="comment-avatar">
+                    <div class="comment-content">
+                        <div class="comment-author">${userData.name}</div>
+                        <div class="comment-text">${comment.text}</div>
+                        <div class="comment-time">${timeAgo}</div>
+                    </div>
+                `;
+                commentList.appendChild(commentElement);
+            }
+        }
+        
+        // Update Profile
+        updateProfileForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = updateName.value;
+            const bio = updateBio.value;
+            const avatarFile = updateAvatar.files[0];
+            
+            try {
+                const updates = {
+                    name,
+                    bio,
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                };
+                
+                // Upload new avatar if exists
+                if (avatarFile) {
+                    const storageRef = storage.ref(`avatars/${currentUser.uid}`);
+                    const snapshot = await storageRef.put(avatarFile);
+                    const avatarUrl = await snapshot.ref.getDownloadURL();
+                    updates.avatarUrl = avatarUrl;
+                    
+                    // Update profile image in navbar and modal
+                    profileImage.src = avatarUrl;
+                    profileModalImage.src = avatarUrl;
+                }
+                
+                // Update user data in Firestore
+                await db.collection('users').doc(currentUser.uid).update(updates);
+                
+                // Update profile name in modal
+                profileModalName.textContent = name;
+                
+                alert('Profil berhasil diperbarui!');
+                hideModal(profileModal);
+            } catch (error) {
+                alert('Gagal memperbarui profil: ' + error.message);
+            }
+        });
+        
+        // Helper function to format time ago
+        function formatTimeAgo(date) {
+            const now = new Date();
+            const seconds = Math.floor((now - date) / 1000);
+            
+            if (seconds < 60) return 'Baru saja';
+            if (seconds < 3600) return `${Math.floor(seconds / 60)} menit yang lalu`;
+            if (seconds < 86400) return `${Math.floor(seconds / 3600)} jam yang lalu`;
+            if (seconds < 604800) return `${Math.floor(seconds / 86400)} hari yang lalu`;
+            
+            return date.toLocaleDateString();
+        }
+        
+        // Animation on scroll
+        const animateOnScroll = () => {
+            const elements = document.querySelectorAll('.post-card, .create-post');
+            
+            elements.forEach(element => {
+                const elementPosition = element.getBoundingClientRect().top;
+                const screenPosition = window.innerHeight / 1.3;
+                
+                if (elementPosition < screenPosition) {
+                    element.style.animation = 'fadeIn 0.5s ease-out forwards';
+                }
+            });
+        };
+        
+        window.addEventListener('scroll', animateOnScroll);
+        window.addEventListener('load', animateOnScroll);
+    </script>
+</body>
+</html>
